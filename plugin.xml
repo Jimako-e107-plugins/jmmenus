@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<e107Plugin name="JM Menus" lan="" version="1.0.0" date="2020-06-28" compatibility="2.3" installRequired="true" >
+	<author name="Jimako" url="https://www.e107sk.com/" />
+	<summary lan="">The simple Plugin for adding some functionality to core menus </summary>
+	<description lan="">The simple Plugin for adding some functionality to core menus</description>
+</e107Plugin>
