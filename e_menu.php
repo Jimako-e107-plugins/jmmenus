@@ -43,7 +43,31 @@ class jmmenus_menu
 				$fields['shortcode_menuCode']         = array('title'=> "Shortcode code", 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge'));
 				$fields['shortcode_menuTableStyle']   = array('title'=> "ID/Mode for tablestyle", 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge')); 
 				return $fields;
-        
+      
+        	case "frontpage_hero":
+                $templates = e107::getLayouts('hero', 'hero', 'front', null, false, false);
+                $fields['shortcode_menuCaption']      = array('title'=> LAN_CAPTION, 'type'=>'text', 'multilan'=>true, 'writeParms'=>array('size'=>'xxlarge'));	
+                $fields['shortcode_menuTableStyle']   = array('title'=> "ID/Mode for tablestyle" , 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge')); 
+                $fields['template']     = array('title'=> LAN_TEMPLATE,  'type'=>'dropdown', 'writeParms'=>array('optArray'=>$templates, 'default'=>'blank'), 'help'=>'');
+				 
+            return $fields;
+
+			case "frontpage_featurebox":
+                $templates = e107::getLayouts('featurebox', 'featurebox_category', 'front', null, false, false);
+                $fields['shortcode_menuCaption']      = array('title'=> LAN_CAPTION, 'type'=>'text', 'multilan'=>true, 'writeParms'=>array('size'=>'xxlarge'));	
+                $fields['shortcode_menuTableStyle']   = array('title'=> "ID/Mode for tablestyle" , 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge')); 
+                $fields['template']     = array('title'=> LAN_TEMPLATE,  'type'=>'dropdown', 'writeParms'=>array('optArray'=>$templates, 'default'=>'blank'), 'help'=>'');
+				 
+            return $fields;
+
+			case "frontpage_wmessage":
+              //  $templates = e107::getLayouts('featurebox', 'featurebox', 'front', null, false, false);
+                $fields['shortcode_menuCaption']      = array('title'=> LAN_CAPTION, 'type'=>'text', 'multilan'=>true, 'writeParms'=>array('size'=>'xxlarge'));	
+                $fields['shortcode_menuTableStyle']   = array('title'=> "ID/Mode for tablestyle" , 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge')); 
+               // $fields['template']     = array('title'=> LAN_TEMPLATE,  'type'=>'dropdown', 'writeParms'=>array('optArray'=>$templates, 'default'=>'blank'), 'help'=>'');
+				 
+            return $fields;
+            
         	case "block_code":
             
 				$fields['block_title']        = array('title'=> "Caption", 'type'=>'text', 'multilan'=>true, 'writeParms'=>array('size'=>'xxlarge'));

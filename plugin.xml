@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<e107Plugin name="JM Menus" lan="" version="1.0.0" date="2020-06-28" compatibility="2.3" installRequired="true" >
+<e107Plugin name="JM Menus" lan="" version="1.1.0" date="2020-12-21" compatibility="2.3.1" installRequired="true" >
 	<author name="Jimako" url="https://www.e107sk.com/" />
 	<summary lan="">The simple Plugin for adding some functionality to core menus </summary>
 	<description lan="">The simple Plugin for adding some functionality to core menus</description>
+	<adminLinks>
+		<link  icon="images/icon_64.png" iconSmall="images/icon_32.png" icon128="images/icon_128.png">LAN_CONFIGURE</link>
+	 </adminLinks>
 </e107Plugin>
