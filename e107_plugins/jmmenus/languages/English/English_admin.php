@@ -18,6 +18,7 @@ return [
 	'LAN_JMMENUS_PARMS'             => "Parms",
 	'LAN_JMMENUS_PARMS_INVALID'     => "Parms must be a valid JSON object.",
 	'LAN_JMMENUS_PARMS_SAVED'       => "Menu parms saved.",
+	'LAN_JMMENUS_PARMS_MULTILAN'    => "Parms not saved: [x] must be an object keyed by language, e.g. {\"English\": \"...\"}.",
 	'LAN_JMMENUS_HELP'              => "This option is for cleaning menus tables without using PHPMyAdmin. All available menus are created again by using Menu Manager (default core behavior).<br>Menus added to any layout are untouched with using Delete button.",
 	'LAN_JMMENUS_CLEAN_BUTTON'      => "Delete All Not Used Menus",
 	'LAN_JMMENUS_CLEAN_CONFIRM'     => "Delete [x] menus that are not assigned to any layout or area?",

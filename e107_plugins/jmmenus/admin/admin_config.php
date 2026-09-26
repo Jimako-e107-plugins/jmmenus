@@ -105,15 +105,45 @@ class menus_ui extends e_admin_ui
 
 		$parms = json_decode($raw, true);
 
-		if(!is_array($parms))
+		if(!is_array($parms) || ($parms && array_keys($parms) === range(0, count($parms) - 1)))
 		{
 			e107::getMessage()->addError(LAN_JMMENUS_PARMS_INVALID);
 			return false;
 		}
 
+		$fields = $this->getMenuConfigFields((string) varset($new_data['menu_path']), (string) varset($new_data['menu_name']));
+
+		foreach($fields as $fld => $var)
+		{
+			if(!empty($var['multilan']) && isset($parms[$fld]) && !is_array($parms[$fld]))
+			{
+				e107::getMessage()->addError(str_replace('[x]', $fld, LAN_JMMENUS_PARMS_MULTILAN));
+				return false;
+			}
+		}
+
+		array_walk_recursive($parms, function (&$value)
+		{
+			$value = is_scalar($value) ? (string) $value : '';
+		});
+
 		$this->menuParms = $parms;
 
 		return $new_data;
+	}
+
+	protected function getMenuConfigFields($menu_path, $menu_name)
+	{
+		$obj = e107::getAddon(rtrim($menu_path, '/'), 'e_menu');
+
+		if(!$obj)
+		{
+			return array();
+		}
+
+		$fields = e107::callMethod($obj, 'config', (string) substr($menu_name, 0, -5));
+
+		return is_array($fields) ? $fields : array();
 	}
 
 	protected function saveMenuParms($id)

@@ -69,7 +69,7 @@ Line numbers are given as `upstream / lite`. Where only one number is given, it 
   `e_menu.php`, stored as `{language: value}` by `updateParms()`):
   - `navigation/navigation_menu.php:20` (lite `eplugins/navigation/navigation_menu.php:15`):
     `isset($parm['caption'][e_LANGUAGE]) ? $parm['caption'][e_LANGUAGE] : LAN_PLUGIN_NAVIGATION_NAME`
-  - `social/xurl_menu.php:8`, `tagcloud/tagcloud_menu.php:190-195`, `news/news_archive_menu.php:106`
+  - `social/xurl_menu.php:8`, `tagcloud/tagcloud_menu.php:192-195`, `news/news_archive_menu.php:106`
     (upstream): same shape, falling back to the menu's own default caption.
   The fallback in core is the menu's default caption. The jmmenus menus have no default caption (an
   unconfigured menu always rendered with an empty caption), so the fallback is `''`. No new default was
@@ -124,10 +124,23 @@ What jmmenus does now:
   the database, so it sees the values just saved by the admin UI.
 - Duplicate `options` key: in a PHP array literal the later key wins, so the effective definition was
   the second one (edit allowed). The first one (`editClass => e_UC_NOBODY`) was removed.
-- Differences that remain (not changed, see open questions):
-  - JSON numbers/booleans are stored as such; Menu Manager's form always posts strings.
-  - A multilan field given as a plain string in the JSON reaches `foreach($parms[$fld] …)` in
-    `updateParms()` (menu_class.php:321), which warns on PHP 8. Menu Manager's form always posts an array.
+- Follow-up (user decision, match Menu Manager exactly):
+  - Menu Manager's form posts every value as a string, so `updateParms()` stores strings. jmmenus now
+    converts every scalar leaf of the decoded JSON to a string before `updateParms()`
+    (`true` → `"1"`, `false`/`null` → `""`, numbers → their string form), keeping the array structure
+    (multilan values stay `{language: value}`).
+  - Validation, nothing is saved and an error goes to `e107::getMessage()` when:
+    - the textarea is not valid JSON, or is not a JSON object (scalars and lists are refused);
+    - a field that `e_menu::config()` declares `'multilan' => true` is given as a non-array. Core would
+      hit `foreach($parms[$fld] as $lang => $val)` on a string (menu_class.php:321) and warn on PHP 8;
+      Menu Manager's form always posts an array there.
+  - The configured fields are read the same way `updateParms()` does: `e107::getAddon(rtrim(menu_path,
+    '/'), 'e_menu')` (e107_class.php:3071) and `e107::callMethod($obj, 'config', menu_name without
+    '_menu')` (e107_class.php:3167), both identical in the two trees. The posted `menu_path`/`menu_name`
+    are used because validation runs before the admin UI saves the row.
+  - `getAddon()` returns null when the plugin is not in the `e_menu_list` pref; then there are no
+    configured fields to check, and `updateParms()` itself returns false (reported as
+    `LAN_UPDATED_FAILED`), which is also what Menu Manager does.
 
 ## 3.4 Content filtering in upstream Menu Manager – STOPPED, reported only
 
@@ -200,7 +213,7 @@ What jmmenus does now:
   shutdown function after the script's `exit`. Checked: the LAN load call, aliases, field list (single
   `options`), the list button, `CleanPage()` with 3 and 0 rows, `CleanConfirmTrigger()` for 3 / 0 / false
   (query chain, messages with session flag, log entry, redirect to `list`), `CleanCancelTrigger()`,
-  parms unchanged (CRLF), invalid JSON (save aborted), `e_menu.php` path → `updateParms()`, emptied
+  parms unchanged (CRLF), invalid JSON, JSON scalar and JSON list (save aborted), multilan field as string for `block_code` and `shortcode` (error, save aborted, no write), scalar-to-string conversion (`7`, `12`, `true`, `null`, `false`, `1.5` → `"7"`, `"12"`, `"1"`, `""`, `""`, `"1.5"`), `e_menu.php` path → `updateParms()`, emptied
   textarea, generic path → `filter()` + `strip_tags()` + `setTyped(…, 'escape')`, create with a failing
   write, update without `menu_parms`. No PHP issues from plugin code (one deprecation came from the stub
   base class, which lacks the `public $postFilterMarkup` that the real `e_admin_ui` declares).
@@ -228,6 +241,7 @@ What jmmenus does now:
 | `QueryBuilder::execute()` / `count()` / `fetchRow()` | 2557 / 2805 / 2708 | 2477 / 2725 / 2628 |
 | `e_db_pdo::execute()` | e_db_pdo_class.php:763 | e_db_pdo_class.php:762 |
 | `menu_class::updateParms()` (`e_menu`) | menu_class.php:276 | menu_class.php:276 |
+| `e107::getAddon()` / `e107::callMethod()` | e107_class.php:3071 / 3167 | e107_class.php:3071 / 3167 |
 | `e_parse::filter()` | e_parse_class.php:5738 | e_parse_class.php:5727 |
 | `e_parse::toHTML()` / `parseTemplate()` | e_parse_class.php:1796 / 901 | e_parse_class.php:1797 / 902 |
 | `e_render::setStyle()` / `getStyle()` / `tablerender()` | e_render_class.php:200 / 288 / 314 | same lines |
@@ -258,16 +272,15 @@ What jmmenus does now:
 1. Resolved: `version` bumped to 2.0.0.
 2. Lite does not ship the `hero` and `featurebox` plugins (`eplugins/` has neither). `frontpage_hero_menu.php`,
    `frontpage_featurebox_menu.php` and the matching `e_menu.php` cases (`e107::getLayouts('hero', …)`,
-   `getLayouts('featurebox', …)`) depend on them. What happens on Lite without them is UNVERIFIED.
+   `getLayouts('featurebox', …)`) depend on them. Left as is (user decision); behaviour on Lite without
+   them is UNVERIFIED.
 3. Resolved: captions follow core (current language or `''`), see 3.2.
-4. JSON parms edited in jmmenus: numbers/booleans are stored as JSON numbers/booleans, while Menu
-   Manager always stores strings; a multilan field written as a plain string makes core `updateParms()`
-   warn on PHP 8 (menu_class.php:321). Add validation for these, or leave as is?
-5. The list button is kept in `postFilterMarkup` (same position) as a plain link. If "remove the
-   postFilterMarkup hack" meant not using `postFilterMarkup` at all, `menus_form_ui::renderCustomListButton()`
-   (admin_ui.php:8740) is the alternative, but it renders on the right side of the filter row.
-6. Generic parms (plugins without `e_menu.php`) go through core's `filter()` which HTML-encodes `&`, `<`,
-   quotes. Saving an already-encoded value again encodes it again. This is core Menu Manager behaviour too
-   (UNVERIFIED in a browser); jmmenus only re-saves when the textarea content changed.
-7. Branch: the session was set up with `claude/zealous-euler-cjnmo2`, the task asked for
-   `jmmenus-2-4-update`; work was pushed to `jmmenus-2-4-update` as requested.
+4. Resolved: scalars stored as strings, invalid JSON and non-array multilan fields refused (see 3.3).
+5. Resolved: button stays as a plain link in `postFilterMarkup`.
+6. Kept as core behaviour (user decision). Possible upstream issue, to be verified in a browser:
+   the generic path (menumanager_class.php:1067) runs `filter()` = `htmlspecialchars(strip_tags())`
+   (e_parse_class.php:5738 / 5727) on every save, and the stored value is shown again in a text input
+   (menumanager_class.php:806). If the input shows the entities decoded, each save of an unchanged value
+   encodes `&`, `"`, `'`, `<`, `>` once more (`&` → `&amp;` → `&amp;amp;`). jmmenus only re-saves when the
+   textarea content changed, so it does not trigger this on unrelated edits.
+7. Resolved: work continues on `jmmenus-2-4-update`.
