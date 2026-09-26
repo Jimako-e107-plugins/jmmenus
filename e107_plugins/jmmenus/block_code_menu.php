@@ -23,10 +23,7 @@ $parms = is_array($parm) ? $parm : array();
 $text = "";
  
 $caption = varset($parms['block_title']);
-if(isset($caption[e_LANGUAGE]))
-{
-	$caption = $caption[e_LANGUAGE];
-}
+$caption = isset($caption[e_LANGUAGE]) ? $caption[e_LANGUAGE] : '';
   
 $text =  e107::getParser()->toHTML(varset($parms['block_content']));
 

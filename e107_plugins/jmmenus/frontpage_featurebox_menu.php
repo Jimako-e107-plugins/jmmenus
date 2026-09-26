@@ -31,10 +31,7 @@ if(is_string($parm))
 	
  
 $caption = varset($parms['shortcode_menuCaption']);
-if(isset($caption[e_LANGUAGE]))
-{
-	$caption = $caption[e_LANGUAGE];
-}
+$caption = isset($caption[e_LANGUAGE]) ? $caption[e_LANGUAGE] : '';
 
 // supported parms count, template
 /*

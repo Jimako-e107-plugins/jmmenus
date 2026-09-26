@@ -63,9 +63,20 @@ Line numbers are given as `upstream / lite`. Where only one number is given, it 
 - `block_code_menu.php` and `shortcode_menu.php` never parsed string parms, so a non-array `$parm` is
   normalised to `array()`. The three `frontpage_*` menus keep their existing `parse_str()` for strings and
   additionally fall back to `array()` for any other non-array value.
-- Captions: `varset($parms[key])` first, then the `[e_LANGUAGE]` entry if the value is an array that has
-  it. This keeps the old result (language value if present, otherwise the raw value) without reading a
-  string offset by reference.
+- Captions: `varset($parms[key])`, then `isset($caption[e_LANGUAGE]) ? $caption[e_LANGUAGE] : ''`.
+  No array ever reaches `tablerender()` and no string offset is read by reference.
+  This is the pattern core uses for multilan menu captions (fields declared `'multilan' => true` in
+  `e_menu.php`, stored as `{language: value}` by `updateParms()`):
+  - `navigation/navigation_menu.php:20` (lite `eplugins/navigation/navigation_menu.php:15`):
+    `isset($parm['caption'][e_LANGUAGE]) ? $parm['caption'][e_LANGUAGE] : LAN_PLUGIN_NAVIGATION_NAME`
+  - `social/xurl_menu.php:8`, `tagcloud/tagcloud_menu.php:190-195`, `news/news_archive_menu.php:106`
+    (upstream): same shape, falling back to the menu's own default caption.
+  The fallback in core is the menu's default caption. The jmmenus menus have no default caption (an
+  unconfigured menu always rendered with an empty caption), so the fallback is `''`. No new default was
+  invented.
+  Consequence, same as core: a caption stored as a plain string (not a language array) is no longer
+  shown. Menu Manager never stores multilan fields as plain strings, and jmmenus now refuses to save one
+  (see 3.3 follow-up).
 
 ## 3.3 Saving menu parms
 
@@ -178,9 +189,9 @@ What jmmenus does now:
   partial array, a caption with only another language, and a full `block_code` set; core stubbed
   (`e107::getRender()`, `getParser()`, `library()`, `css()`, `pref()`, `getPlugPref()`, real `varset()`),
   `E_ALL` with an error handler that records everything.
-  - New files: no errors, warnings, notices or deprecations. The only recorded issue is the harness'
-    own check that the caption is an array when only another language exists; the old files do the same
-    (behaviour kept on purpose, see open questions). Style after `block_code` is the outer style again.
+  - New files: no errors, warnings, notices or deprecations; the caption passed to `tablerender()` is
+    always a string (current-language value or `''`, also for other-language-only and plain-string
+    captions). Style after `block_code` is the outer style again.
   - Old root files, same harness: `TypeError: Cannot access offset of type string on string` for
     `$parm = ''` in all five menus, plus undefined-key warnings for partial arrays, and the style leaks
     (`menu` stays set after `block_code`).
@@ -248,9 +259,7 @@ What jmmenus does now:
 2. Lite does not ship the `hero` and `featurebox` plugins (`eplugins/` has neither). `frontpage_hero_menu.php`,
    `frontpage_featurebox_menu.php` and the matching `e_menu.php` cases (`e107::getLayouts('hero', …)`,
    `getLayouts('featurebox', …)`) depend on them. What happens on Lite without them is UNVERIFIED.
-3. A caption stored only for another language (e.g. `{"Slovak": "…"}`) is passed to `tablerender()` as an
-   array, as before. Should it fall back to the first value or `''`? Not changed because of "no other
-   behaviour change".
+3. Resolved: captions follow core (current language or `''`), see 3.2.
 4. JSON parms edited in jmmenus: numbers/booleans are stored as JSON numbers/booleans, while Menu
    Manager always stores strings; a multilan field written as a plain string makes core `updateParms()`
    warn on PHP 8 (menu_class.php:321). Add validation for these, or leave as is?
