@@ -85,10 +85,7 @@ class menus_ui extends e_admin_ui
 		'menu_pages' => array('title' => 'Pages', 'type' => 'text', 'data' => 'str', 'width' => 'auto', 'help' => '', 'readParms' => array(), 'writeParms' => array(), 'class' => 'left', 'thclass' => 'left'),
 		'menu_path' => array('title' => 'Path', 'type' => 'text', 'data' => 'str', 'width' => 'auto', 'help' => '', 'readParms' => array(), 'writeParms' => array(), 'class' => 'left', 'thclass' => 'left'),
 
-		'menu_parms' => array('title' => 'Parms', 'type' => 'textarea', 'data' => 'str', 'width' => 'auto', 'help' => '', 'readParms' => array(), 'writeParms' => array(), 'class' => 'left', 'thclass' => 'left', 'filter' => false, 'batch' => false),
-		'options' => array('title' => LAN_OPTIONS, 'type' => null, 'data' => null,
-			'width' => '10%', 'thclass' => 'center last', 'class' => 'center last',
-			'forced' => true, 'readParms' => array('editClass' => e_UC_NOBODY), 'writeParms' => array('noedit' => true)),
+		'menu_parms' => array('title' => 'Parms', 'type' => 'textarea', 'data' => false, 'width' => 'auto', 'help' => '', 'readParms' => array(), 'writeParms' => array(), 'class' => 'left', 'thclass' => 'left', 'filter' => false, 'batch' => false),
 			'options'                 => array (  'title' => LAN_OPTIONS,  'type' => null,  'data' => null,  'width' => '10%',  'thclass' => 'center last',  'class' => 'center last',  'forced' => 'value',  'readParms' =>  array (),  'writeParms' =>  array (),),
 		);		
 		
@@ -106,40 +103,129 @@ class menus_ui extends e_admin_ui
 		}
 
 		
-		// ------- Customize Create --------
-		
+		protected $menuParms = null;
+
 		public function beforeCreate($new_data,$old_data)
 		{
-			return $new_data;
+			return $this->checkMenuParms($new_data, $old_data);
 		}
 	
 		public function afterCreate($new_data, $old_data, $id)
 		{
-			// do something
+			$this->saveMenuParms($id);
 		}
 
 		public function onCreateError($new_data, $old_data)
 		{
-			// do something		
 		}		
-		
-		
-		// ------- Customize Update --------
 		
 		public function beforeUpdate($new_data, $old_data, $id)
 		{
-			return $new_data;
+			return $this->checkMenuParms($new_data, $old_data);
 		}
 
 		public function afterUpdate($new_data, $old_data, $id)
 		{
-			// do something	
+			$this->saveMenuParms($id);
 		}
 		
 		public function onUpdateError($new_data, $old_data, $id)
 		{
-			// do something		
 		}		
+
+		protected function hasMenuConfig($menu_path)
+		{
+			return file_exists(e_PLUGIN.$menu_path."e_menu.php");
+		}
+
+		protected function checkMenuParms($new_data, $old_data)
+		{
+			$this->menuParms = null;
+
+			if(!isset($new_data['menu_parms']))
+			{
+				return $new_data;
+			}
+
+			$posted = (string) $new_data['menu_parms'];
+
+			if(str_replace("\r\n", "\n", $posted) === str_replace("\r\n", "\n", (string) varset($old_data['menu_parms'])))
+			{
+				return $new_data;
+			}
+
+			if(!$this->hasMenuConfig((string) varset($new_data['menu_path'])))
+			{
+				$this->menuParms = $posted;
+				return $new_data;
+			}
+
+			$raw = trim($posted);
+
+			if($raw === '')
+			{
+				$this->menuParms = array();
+				return $new_data;
+			}
+
+			$parms = json_decode($raw, true);
+
+			if(!is_array($parms))
+			{
+				e107::getMessage()->addError('Parms must be a valid JSON object');
+				return false;
+			}
+
+			$this->menuParms = $parms;
+
+			return $new_data;
+		}
+
+		protected function saveMenuParms($id)
+		{
+			if($this->menuParms === null)
+			{
+				return;
+			}
+
+			$sql = e107::getDb();
+			$id = (int) $id;
+
+			$row = $sql->createQueryBuilder()->select('menu_path')->from('menus')->where('menu_id', $id)->fetchRow();
+
+			if(!$row)
+			{
+				return;
+			}
+
+			if($this->hasMenuConfig($row['menu_path']))
+			{
+				$parms = is_array($this->menuParms) ? $this->menuParms : array();
+				$check = e107::getMenu()->updateParms($id, $parms);
+			}
+			else
+			{
+				$tp = e107::getParser();
+				$parms = $tp->filter((string) $this->menuParms);
+				$parms = strip_tags($parms);
+				$check = $sql->createQueryBuilder()->update('menus')->setTyped('menu_parms', $parms, 'escape')->where('menu_id', $id)->execute();
+			}
+
+			$this->menuParms = null;
+
+			if($check)
+			{
+				e107::getMessage()->addSuccess('Parms saved');
+			}
+			elseif($check === false)
+			{
+				e107::getMessage()->addError(LAN_UPDATED_FAILED);
+			}
+			else
+			{
+				e107::getMessage()->addInfo(LAN_NO_CHANGE);
+			}
+		}
 		
 		// left-panel help menu area. (replaces e_help.php used in old plugins)
 		public function renderHelp()
