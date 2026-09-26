@@ -9,14 +9,6 @@ if (!getperms('P'))
 	exit;
 }
 
-// core is using something else, not minified and only on frontend
-// credit for this notification system belongs Spinnet Planet and it is used for 0.7
-// Sorry, but I wasn't able to find a way how to do it in 2.3
-
-e107::js('footer', e_PLUGIN . "jmmenus/admin/js/bootstrap-notify.min.js", 'jquery');
-e107::js('footer', e_PLUGIN . "jmmenus/admin/js/jmmenus_admin.js", 'jquery');
-
-
 class jmmenus_adminArea extends e_admin_dispatcher
 {
 
@@ -27,6 +19,7 @@ class jmmenus_adminArea extends e_admin_dispatcher
 			'path' => null,
 			'ui' => 'menus_form_ui',
 			'uipath' => null,
+			'perm' => 'P',
 		),
 		
 
@@ -40,8 +33,13 @@ class jmmenus_adminArea extends e_admin_dispatcher
 	);
 
 	protected $adminMenuAliases = array(
-		'main/edit'	=> 'main/list'				
-	);	
+		'main/edit'	=> 'main/list',
+		'menus/clean' => 'menus/list',
+	);
+
+	protected $pageTitles = array(
+		'menus/clean' => 'Delete All Not Used Menus',
+	);
 	
 	protected $menuTitle = 'JM Menus';
 }
@@ -104,9 +102,7 @@ class menus_ui extends e_admin_ui
 	
 		public function init()
 		{
- 
-		      $this->postFilterMarkup = $this->DeleteMenusButton();
-	
+			$this->postFilterMarkup = $this->DeleteMenusButton();
 		}
 
 		
@@ -158,14 +154,80 @@ class menus_ui extends e_admin_ui
 			
 	public function DeleteMenusButton()
 	{
-		$text = "</fieldset></form><div class='e-container'>
-			<table id='table_delete_notusedmenus' style='" . ADMIN_WIDTH . "' class='table adminlist table-striped'>";
-		$text .=
-			"<button id='delete_notusedmenus' type='button' table='menus'
-			idName='notused' class='btn btn-danger'>Delete All Not Used Menus</button></div>";
-		$text .= "</td></tr></table></div><form><fieldset>";
-		return $text;
-	}	
+		$url = e_REQUEST_SELF.'?mode=menus&amp;action=clean';
+
+		return "<a class='btn btn-danger' href='".$url."'>Delete All Not Used Menus</a>";
+	}
+
+	public function CleanPage()
+	{
+		$count = e107::getDb()->createQueryBuilder()
+			->from('menus')
+			->where('menu_location', '')
+			->where('menu_layout', '')
+			->count();
+
+		if($count === 0)
+		{
+			e107::getMessage()->addInfo('Nothing to delete');
+		}
+		else
+		{
+			e107::getMessage()->addWarning(str_replace('[x]', $count, 'Delete [x] menus that are not assigned to any layout or area?'));
+		}
+
+		$triggers = array('cancel' => array(LAN_CANCEL, 'cancel'));
+
+		if($count > 0)
+		{
+			$triggers = array('confirm' => array(LAN_CONFDELETE, 'confirm')) + $triggers;
+		}
+
+		$forms = array(
+			'jmmenus-clean' => array(
+				'id'        => 'jmmenus-clean',
+				'url'       => e_REQUEST_SELF,
+				'query'     => 'mode=menus&action=clean',
+				'fieldsets' => array(
+					'confirm' => array(
+						'triggers' => $triggers,
+					),
+				),
+			),
+		);
+
+		return $this->getUI()->renderForm($forms);
+	}
+
+	public function CleanConfirmTrigger()
+	{
+		$result = e107::getDb()->createQueryBuilder()
+			->delete('menus')
+			->where('menu_location', '')
+			->where('menu_layout', '')
+			->execute();
+
+		if($result === false)
+		{
+			e107::getMessage()->addError('Deleting not used menus failed', 'default', true);
+		}
+		elseif($result > 0)
+		{
+			e107::getMessage()->addSuccess(str_replace('[x]', $result, 'Deleted [x] records of table menus'), 'default', true);
+			e107::getLog()->add('Delete all not used menus', str_replace('[x]', $result, 'Deleted [x] records of table menus'), E_LOG_INFORMATIVE, 'JMMENUS_01');
+		}
+		else
+		{
+			e107::getMessage()->addInfo('Nothing to delete', 'default', true);
+		}
+
+		$this->redirectAction('list', 'id');
+	}
+
+	public function CleanCancelTrigger()
+	{
+		$this->redirectAction('list', 'id');
+	}
 }
 				
 
