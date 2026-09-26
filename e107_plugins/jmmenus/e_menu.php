@@ -23,7 +23,7 @@ class jmmenus_menu
 {
 	function __construct()
 	{
-		// e107::lan('jm_shortcode','menu',true); // English_menu.php or {LANGUAGE}_menu.php
+		e107::lan('jmmenus', true, true);
 	}
 
 	/**
@@ -39,15 +39,15 @@ class jmmenus_menu
 		{
 			case "shortcode":
 		
-				$fields['shortcode_menuCaption']      = array('title'=> "Caption", 'type'=>'text', 'multilan'=>true, 'writeParms'=>array('size'=>'xxlarge'));
-				$fields['shortcode_menuCode']         = array('title'=> "Shortcode code", 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge'));
-				$fields['shortcode_menuTableStyle']   = array('title'=> "ID/Mode for tablestyle", 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge')); 
+				$fields['shortcode_menuCaption']      = array('title'=> LAN_JMMENUS_CAPTION, 'type'=>'text', 'multilan'=>true, 'writeParms'=>array('size'=>'xxlarge'));
+				$fields['shortcode_menuCode']         = array('title'=> LAN_JMMENUS_SHORTCODE_CODE, 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge'));
+				$fields['shortcode_menuTableStyle']   = array('title'=> LAN_JMMENUS_TABLESTYLE, 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge')); 
 				return $fields;
       
         	case "frontpage_hero":
                 $templates = e107::getLayouts('hero', 'hero', 'front', null, false, false);
                 $fields['shortcode_menuCaption']      = array('title'=> LAN_CAPTION, 'type'=>'text', 'multilan'=>true, 'writeParms'=>array('size'=>'xxlarge'));	
-                $fields['shortcode_menuTableStyle']   = array('title'=> "ID/Mode for tablestyle" , 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge')); 
+                $fields['shortcode_menuTableStyle']   = array('title'=> LAN_JMMENUS_TABLESTYLE, 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge')); 
                 $fields['template']     = array('title'=> LAN_TEMPLATE,  'type'=>'dropdown', 'writeParms'=>array('optArray'=>$templates, 'default'=>'blank'), 'help'=>'');
 				 
             return $fields;
@@ -55,7 +55,7 @@ class jmmenus_menu
 			case "frontpage_featurebox":
                 $templates = e107::getLayouts('featurebox', 'featurebox_category', 'front', null, false, false);
                 $fields['shortcode_menuCaption']      = array('title'=> LAN_CAPTION, 'type'=>'text', 'multilan'=>true, 'writeParms'=>array('size'=>'xxlarge'));	
-                $fields['shortcode_menuTableStyle']   = array('title'=> "ID/Mode for tablestyle" , 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge')); 
+                $fields['shortcode_menuTableStyle']   = array('title'=> LAN_JMMENUS_TABLESTYLE, 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge')); 
                 $fields['template']     = array('title'=> LAN_TEMPLATE,  'type'=>'dropdown', 'writeParms'=>array('optArray'=>$templates, 'default'=>'blank'), 'help'=>'');
 				 
             return $fields;
@@ -63,17 +63,17 @@ class jmmenus_menu
 			case "frontpage_wmessage":
               //  $templates = e107::getLayouts('featurebox', 'featurebox', 'front', null, false, false);
                 $fields['shortcode_menuCaption']      = array('title'=> LAN_CAPTION, 'type'=>'text', 'multilan'=>true, 'writeParms'=>array('size'=>'xxlarge'));	
-                $fields['shortcode_menuTableStyle']   = array('title'=> "ID/Mode for tablestyle" , 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge')); 
+                $fields['shortcode_menuTableStyle']   = array('title'=> LAN_JMMENUS_TABLESTYLE, 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge')); 
                // $fields['template']     = array('title'=> LAN_TEMPLATE,  'type'=>'dropdown', 'writeParms'=>array('optArray'=>$templates, 'default'=>'blank'), 'help'=>'');
 				 
             return $fields;
             
         	case "block_code":
             
-				$fields['block_title']        = array('title'=> "Caption", 'type'=>'text', 'multilan'=>true, 'writeParms'=>array('size'=>'xxlarge'));
-				$fields['block_content']      = array('title'=> "HTML code", 'type'=>'textarea', 'writeParms'=>array('size'=>'xxlarge'));
-				$fields['block_style']        = array('title'=> "Style code [theme support]", 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge' ));              
-				$fields['block_tablestyle']   = array('title'=> "ID/Mode for tablestyle [theme support]", 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge' ));  
+				$fields['block_title']        = array('title'=> LAN_JMMENUS_CAPTION, 'type'=>'text', 'multilan'=>true, 'writeParms'=>array('size'=>'xxlarge'));
+				$fields['block_content']      = array('title'=> LAN_JMMENUS_HTML_CODE, 'type'=>'textarea', 'writeParms'=>array('size'=>'xxlarge'));
+				$fields['block_style']        = array('title'=> LAN_JMMENUS_STYLE_CODE, 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge' ));              
+				$fields['block_tablestyle']   = array('title'=> LAN_JMMENUS_TABLESTYLE_THEME, 'type'=>'text', 'writeParms'=>array('size'=>'xxlarge' ));  
             return $fields;
    		}	 
 	}
