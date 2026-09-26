@@ -15,15 +15,17 @@ if (!defined('e107_INIT')) { exit; }
 
 $text = "";
  
-if(isset($parm['shortcode_menuCaption'][e_LANGUAGE]))
+$parms = is_array($parm) ? $parm : array();
+
+$caption = varset($parms['shortcode_menuCaption']);
+if(isset($caption[e_LANGUAGE]))
 {
-	$caption = $parm['shortcode_menuCaption'][e_LANGUAGE];
+	$caption = $caption[e_LANGUAGE];
 }
-else $caption = $parm['shortcode_menuCaption']; 
   
  
-$text =  e107::getParser()->parseTemplate($parm['shortcode_menuCode']);
-$style =  e107::getParser()->parseTemplate($parm['shortcode_menuTableStyle']);   
+$text =  e107::getParser()->parseTemplate(varset($parms['shortcode_menuCode']));
+$style =  e107::getParser()->parseTemplate(varset($parms['shortcode_menuTableStyle']));   
  
 e107::getRender()->tablerender($caption, $text, $style );
  

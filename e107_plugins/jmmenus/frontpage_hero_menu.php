@@ -23,14 +23,18 @@ if(is_string($parm))
 	{
 		$parms = $parm;
 	}
+	if(!is_array($parms))
+	{
+		$parms = array();
+	}
 	
 	
  
-if(isset($parms['shortcode_menuCaption'][e_LANGUAGE]))
+$caption = varset($parms['shortcode_menuCaption']);
+if(isset($caption[e_LANGUAGE]))
 {
-	$caption = $parms['shortcode_menuCaption'][e_LANGUAGE];
+	$caption = $caption[e_LANGUAGE];
 }
-else $caption = $parms['shortcode_menuCaption']; 
 
 // supported parms count, template
 $supportedkeys = array(  'template' );
@@ -51,7 +55,7 @@ else {
 }
  
 $text =  e107::getParser()->parseTemplate($code);
-$style =  e107::getParser()->parseTemplate($parm['shortcode_menuTableStyle']);     
+$style =  e107::getParser()->parseTemplate(varset($parms['shortcode_menuTableStyle']));     
  
 $heroVisibility = e107::pref('hero', 'visibility', e_UC_NOBODY);
 if(true) {
