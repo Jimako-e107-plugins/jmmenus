@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<e107Plugin name="JM Menus" lan="" version="1.2.0" date="2021-12-23" compatibility="2.3.1" installRequired="true" >
+<e107Plugin name="JM Menus" lan="LAN_JMMENUS_PLUGIN_NAME" version="1.2.0" date="2021-12-23" compatibility="2.4" installRequired="true" >
 	<author name="Jimako" url="https://www.e107sk.com/" />
-	<summary lan="">The simple Plugin for adding some functionality to core menus </summary>
-	<description lan="">The simple Plugin for adding some functionality to core menus</description>
+	<summary lan="LAN_JMMENUS_PLUGIN_SUMMARY">The simple Plugin for adding some functionality to core menus </summary>
+	<description lan="LAN_JMMENUS_PLUGIN_DESCRIPTION">The simple Plugin for adding some functionality to core menus</description>
 	<category>tools</category>
 	<copyright>Jimako</copyright>
 	<adminLinks>
@@ -10,7 +10,5 @@
 	</adminLinks>
 	<keywords>
 		<word>generic</word>
-		<word>bootstrap5</word>
-		<word>bootstrap</word>
 	</keywords>
 </e107Plugin>
