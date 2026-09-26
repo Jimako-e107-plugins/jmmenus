@@ -1,5 +1,8 @@
 # jmmenus 2.4 update – notes
 
+Target: e107 upstream (2.4) only. jmmenus is not meant for the Lite fork; Lite was used as a
+second reference tree during this update and its line numbers are kept below for information only.
+
 Reference trees used for every core claim below:
 
 - upstream: `e107inc/e107` `master` @ `3cd96ea259bd90b64e775bf6918c1174efbca941` (paths `e107_handlers/…`)
@@ -270,10 +273,8 @@ What jmmenus does now:
 ## Open questions
 
 1. Resolved: `version` bumped to 2.0.0.
-2. Lite does not ship the `hero` and `featurebox` plugins (`eplugins/` has neither). `frontpage_hero_menu.php`,
-   `frontpage_featurebox_menu.php` and the matching `e_menu.php` cases (`e107::getLayouts('hero', …)`,
-   `getLayouts('featurebox', …)`) depend on them. Left as is (user decision); behaviour on Lite without
-   them is UNVERIFIED.
+2. Not applicable: the target is e107 upstream only, which ships `e107_plugins/hero` and
+   `e107_plugins/featurebox`. (Lite has neither; not a target.)
 3. Resolved: captions follow core (current language or `''`), see 3.2.
 4. Resolved: scalars stored as strings, invalid JSON and non-array multilan fields refused (see 3.3).
 5. Resolved: button stays as a plain link in `postFilterMarkup`.
