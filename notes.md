@@ -168,7 +168,7 @@ What jmmenus does now:
   e107_class.php:425) and the file `_detectLanGlobal()` (plugin_class.php:1148) looks for; the admin LAN
   file is only loaded on the plugin's own admin page. `plugin.xml` keeps the English texts as fallback
   (`e_plugin::getName()` uses the constant only when it is defined, plugin_class.php:920).
-- `version` unchanged (1.2.0), see open questions.
+- `version` bumped to 2.0.0 (user decision).
 
 ## Verification
 
@@ -244,7 +244,7 @@ What jmmenus does now:
 
 ## Open questions
 
-1. `plugin.xml` `version` is still `1.2.0`. Should it be bumped for this release?
+1. Resolved: `version` bumped to 2.0.0.
 2. Lite does not ship the `hero` and `featurebox` plugins (`eplugins/` has neither). `frontpage_hero_menu.php`,
    `frontpage_featurebox_menu.php` and the matching `e_menu.php` cases (`e107::getLayouts('hero', …)`,
    `getLayouts('featurebox', …)`) depend on them. What happens on Lite without them is UNVERIFIED.
