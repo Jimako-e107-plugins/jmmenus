@@ -34,11 +34,20 @@ $styleid =  varset($parms['block_tablestyle']);
         
 $s = varset($parms['block_style']);     
                         
+$ns = e107::getRender();
+$prevStyle = $ns->getStyle();
+$styleChanged = false;
+
 if(is_string($s) && strlen($s) > 0) {
-   e107::getRender()->setStyle($s);
+   $ns->setStyle($s);
+   $styleChanged = true;
 }        
                                     
-e107::getRender()->tablerender($caption, $text,  $styleid  ) ;
+$ns->tablerender($caption, $text,  $styleid  ) ;
+
+if($styleChanged) {
+   $ns->setStyle($prevStyle);
+}
 
  
 ?>
