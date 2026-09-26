@@ -131,3 +131,134 @@ What jmmenus does now:
   array to the menu file as `$parm`.
 - Per the rules, nothing was changed in 3.4. jmmenus does not add any filtering of its own; the generic
   path in 3.3 reuses the core behaviour above (user decision).
+
+## 3.5 block_code style leak
+
+- `e_render::setStyle()` (e_render_class.php:200) stores the style in `$eSetStyle`, which stays set for
+  every later `tablerender()` (e_render_class.php:314 → `tablestyle()` reads `$this->eSetStyle`).
+  `block_code_menu.php` now reads `getStyle()` (e_render_class.php:288) before and restores it after its
+  own `tablerender()`, only when it changed the style.
+- `setStyle()` casts to string, so an original `null` comes back as `''`. `tablestyle()` only uses the
+  value through `(string)`, `!empty()` and `===` against `'default'`/`'main'`, where both behave the same.
+
+## 3.6 Structure and language
+
+- Dispatcher class is in `admin/admin_menu.php`, included by `admin/admin_config.php` with
+  `e_PLUGIN.'jmmenus/admin/admin_menu.php'`. Core does not auto-load any `admin_menu.php`, and the Menu
+  Manager scan for `*_menu.php` uses `get_files(e_PLUGIN, "_menu\.php$", 'standard', 1)`
+  (menumanager_class.php:511 and 2677), i.e. one level below `e_PLUGIN`, so `admin/admin_menu.php` is not
+  picked up as a front-end menu (recursion depth check in file_class.php:250 `get_files()`).
+- Alias `main/edit` pointed at a mode that does not exist; it is now `menus/edit → menus/list`
+  (plus `menus/clean → menus/list` so the menu entry stays highlighted).
+- `e107::lan('jmmenus', true, true)` → `plugLan('jmmenus', true, true)` (e107_class.php:4432):
+  `$fname === true` → `English_admin`, `$flat === true` →
+  `e_PLUGIN.'jmmenus/languages/English/English_admin.php'`. Same code in both trees. In the admin area
+  `includeLan()` (e107_class.php:4212) swaps in the `adminlanguage` pref; array-style files get an English
+  fallback via `includeLanArray()` (e107_class.php:4269).
+- `e_menu.php` loads the same file in its constructor. `e_menu::config()` is only called from Menu Manager
+  and from `menu_class::updateParms()`, both admin-side.
+- LAN file uses the `return [ … ];` format, like core's own language files.
+
+## 3.7 plugin.xml
+
+- `compatibility="2.4"`: `_fixCompat()` (plugin_class.php:1188) keeps `2.4`. Both reference trees report
+  2.4.x (`e107_admin/ver.php:13` `2.4.0`, `eadmin/ver.php:13` `2.4.0.4`).
+- Name/summary/description LANs are in `languages/English/English_global.php`. That is the file core
+  loads for every installed plugin (`e107::_loadPluginLans()` → `plugLan($plug, 'global', true)`,
+  e107_class.php:425) and the file `_detectLanGlobal()` (plugin_class.php:1148) looks for; the admin LAN
+  file is only loaded on the plugin's own admin page. `plugin.xml` keeps the English texts as fallback
+  (`e_plugin::getName()` uses the constant only when it is defined, plugin_class.php:920).
+- `version` unchanged (1.2.0), see open questions.
+
+## Verification
+
+- PHP available: 8.4.19 only. `php -l` on every PHP file in `e107_plugins/jmmenus/`: no errors.
+  PHP 7.4–8.3 were not available; the code uses no syntax newer than 7.4 (reasoned, not run).
+- Menu harness (run): each `*_menu.php` included from a function with `$parm` set to `''`, `null`, a
+  partial array, a caption with only another language, and a full `block_code` set; core stubbed
+  (`e107::getRender()`, `getParser()`, `library()`, `css()`, `pref()`, `getPlugPref()`, real `varset()`),
+  `E_ALL` with an error handler that records everything.
+  - New files: no errors, warnings, notices or deprecations. The only recorded issue is the harness'
+    own check that the caption is an array when only another language exists; the old files do the same
+    (behaviour kept on purpose, see open questions). Style after `block_code` is the outer style again.
+  - Old root files, same harness: `TypeError: Cannot access offset of type string on string` for
+    `$parm = ''` in all five menus, plus undefined-key warnings for partial arrays, and the style leaks
+    (`menu` stays set after `block_code`).
+- Admin harness (run): `admin/admin_config.php` executed against a stub `class2.php` (fake query builder
+  that records the chain, fake message/log/menu objects, stub admin UI base classes), tests run from a
+  shutdown function after the script's `exit`. Checked: the LAN load call, aliases, field list (single
+  `options`), the list button, `CleanPage()` with 3 and 0 rows, `CleanConfirmTrigger()` for 3 / 0 / false
+  (query chain, messages with session flag, log entry, redirect to `list`), `CleanCancelTrigger()`,
+  parms unchanged (CRLF), invalid JSON (save aborted), `e_menu.php` path → `updateParms()`, emptied
+  textarea, generic path → `filter()` + `strip_tags()` + `setTyped(…, 'escape')`, create with a failing
+  write, update without `menu_parms`. No PHP issues from plugin code (one deprecation came from the stub
+  base class, which lacks the `public $postFilterMarkup` that the real `e_admin_ui` declares).
+- NOT run: a real e107 upstream or Lite install. Permission check, CSRF token injection and check, the
+  redirect, the edit form showing `menu_parms` with `'data' => false`, and the look in the Lite admin theme
+  are reasoned from the core code cited above only.
+
+## Core API evidence (definition read in both trees)
+
+| API / constant | upstream | lite |
+|---|---|---|
+| `e107::getDb()` | e107_handlers/e107_class.php:1731 | ehandlers/e107_class.php:1731 |
+| `e107::getMessage()` | e107_class.php:2469 | e107_class.php:2469 |
+| `e107::getLog()` | e107_class.php:2107 | e107_class.php:2107 |
+| `e107::getMenu()` | e107_class.php:1896 | e107_class.php:1896 |
+| `e107::getParser()` | e107_class.php:1629 | e107_class.php:1629 |
+| `e107::getRender()` | e107_class.php:1821 | e107_class.php:1821 |
+| `e107::lan()` / `plugLan()` | e107_class.php:4606 / 4432 | e107_class.php:4606 / 4432 |
+| `e107::redirect()` | e107_class.php:5066 | e107_class.php:5066 |
+| `e107::getAdminUI()` | e107_class.php:3058 | e107_class.php:3058 |
+| `e107::getLayouts()`, `library()`, `css()`, `pref()`, `getPlugPref()` (unchanged menu code) | e107_class.php:4007, 2523, 2859, 4635, 1476 | same lines |
+| `createQueryBuilder()` | Database/ConnectionTrait.php:296 | Database/ConnectionTrait.php:296 |
+| `QueryBuilder::select()` / `from()` / `where()` | Database/QueryBuilder.php:386 / 587 / 808 | Database/QueryBuilder.php:365 / 566 / 728 |
+| `QueryBuilder::delete()` / `update()` / `setTyped()` | 2259 / 1970 / 2059 | 2179 / 1890 / 1979 |
+| `QueryBuilder::execute()` / `count()` / `fetchRow()` | 2557 / 2805 / 2708 | 2477 / 2725 / 2628 |
+| `e_db_pdo::execute()` | e_db_pdo_class.php:763 | e_db_pdo_class.php:762 |
+| `menu_class::updateParms()` (`e_menu`) | menu_class.php:276 | menu_class.php:276 |
+| `e_parse::filter()` | e_parse_class.php:5738 | e_parse_class.php:5727 |
+| `e_parse::toHTML()` / `parseTemplate()` | e_parse_class.php:1796 / 901 | e_parse_class.php:1797 / 902 |
+| `e_render::setStyle()` / `getStyle()` / `tablerender()` | e_render_class.php:200 / 288 / 314 | same lines |
+| `eMessage::addSuccess/addError/addWarning/addInfo()` | message_handler.php:330 / 343 / 356 / 369 | same lines |
+| `e_admin_log::add()` / `E_LOG_INFORMATIVE` | admin_log_class.php:203 / 90 | same lines |
+| `class e_admin_dispatcher` / `$adminMenuAliases` / `$pageTitles` | admin_ui.php:997 / 1056 / 1077 | same lines |
+| `e_admin_dispatcher::checkAccess()` / `hasModeAccess()` / `checkAdminPermCode()` | admin_ui.php:1193 / 1228 / 1335 | same lines |
+| `e_admin_controller::dispatchObserver()` / `checkTriggerToken()` | admin_ui.php:2619 / 2705 | same lines |
+| `e_admin_controller::redirect()` / `redirectAction()` | admin_ui.php:2899 / 2941 | same lines |
+| `e_admin_controller_ui::getUI()` | admin_ui.php:4003 | admin_ui.php:4003 |
+| `class e_admin_ui` / `$postFilterMarkup` | admin_ui.php:5969 / 5997 | admin_ui.php:5983 / 6011 |
+| `e_admin_ui::beforeCreate/afterCreate/beforeUpdate/afterUpdate()` | admin_ui.php:7502 / 7512 / 7531 / 7542 | admin_ui.php:7516 / 7526 / 7545 / 7556 |
+| `e_admin_ui::renderHelp()` | admin_ui.php:7597 | admin_ui.php:7611 |
+| `e_admin_controller_ui::_manageSubmit()` (hook order) | admin_ui.php:5220 | admin_ui.php:5174 |
+| `class e_admin_form_ui` | admin_ui.php:7968 | admin_ui.php:7982 |
+| `e_form::renderForm()` | form_handler.php:8394 | form_handler.php:8394 |
+| `varset()` | core_functions.php:43 | core_functions.php:43 |
+| `getperms()` | class2.php:1330 | class2.php:1330 |
+| `e_PLUGIN` / `e_ADMIN` / `e_REQUEST_SELF` / `e_UC_NOBODY` | e107_class.php:5794 / 5791 / 6059 / 5640 | same lines |
+| `e_LANGUAGE` | language_class.php:696 | language_class.php:696 |
+| `LAN_CANCEL` / `LAN_TITLE` | e107_languages/English/English.php:91 / 130 | elanguages/English/English.php:91 / 130 |
+| `LAN_CONFDELETE` / `LAN_UPDATED_FAILED` / `LAN_NO_CHANGE` | English/admin/lan_admin.php:206 / 183 / 184 | same lines |
+| `LAN_MANAGE` / `LAN_ID` / `LAN_ORDER` / `LAN_USERCLASS` / `LAN_OPTIONS` / `LAN_HELP` | lan_admin.php:157 / 285 / 216 / 271 / 175 / 273 | same lines |
+| `LAN_CAPTION` / `LAN_TEMPLATE` (unchanged e_menu code) | lan_admin.php:367 / 296 | same lines |
+
+## Open questions
+
+1. `plugin.xml` `version` is still `1.2.0`. Should it be bumped for this release?
+2. Lite does not ship the `hero` and `featurebox` plugins (`eplugins/` has neither). `frontpage_hero_menu.php`,
+   `frontpage_featurebox_menu.php` and the matching `e_menu.php` cases (`e107::getLayouts('hero', …)`,
+   `getLayouts('featurebox', …)`) depend on them. What happens on Lite without them is UNVERIFIED.
+3. A caption stored only for another language (e.g. `{"Slovak": "…"}`) is passed to `tablerender()` as an
+   array, as before. Should it fall back to the first value or `''`? Not changed because of "no other
+   behaviour change".
+4. JSON parms edited in jmmenus: numbers/booleans are stored as JSON numbers/booleans, while Menu
+   Manager always stores strings; a multilan field written as a plain string makes core `updateParms()`
+   warn on PHP 8 (menu_class.php:321). Add validation for these, or leave as is?
+5. The list button is kept in `postFilterMarkup` (same position) as a plain link. If "remove the
+   postFilterMarkup hack" meant not using `postFilterMarkup` at all, `menus_form_ui::renderCustomListButton()`
+   (admin_ui.php:8740) is the alternative, but it renders on the right side of the filter row.
+6. Generic parms (plugins without `e_menu.php`) go through core's `filter()` which HTML-encodes `&`, `<`,
+   quotes. Saving an already-encoded value again encodes it again. This is core Menu Manager behaviour too
+   (UNVERIFIED in a browser); jmmenus only re-saves when the textarea content changed.
+7. Branch: the session was set up with `claude/zealous-euler-cjnmo2`, the task asked for
+   `jmmenus-2-4-update`; work was pushed to `jmmenus-2-4-update` as requested.
