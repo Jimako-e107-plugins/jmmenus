@@ -18,25 +18,33 @@
 
 if (!defined('e107_INIT')) { exit; }
 
+$parms = is_array($parm) ? $parm : array();
+
 $text = "";
  
-if(isset($parm['block_title'][e_LANGUAGE]))
-{
-	$caption = $parm['block_title'][e_LANGUAGE];
-}
-else $caption = $parm['block_title']; 
+$caption = varset($parms['block_title']);
+$caption = isset($caption[e_LANGUAGE]) ? $caption[e_LANGUAGE] : '';
   
-$text =  e107::getParser()->toHTML($parm['block_content']);
+$text =  e107::getParser()->toHTML(varset($parms['block_content']));
 
-$styleid =  $parm['block_tablestyle']; 
+$styleid =  varset($parms['block_tablestyle']); 
         
-$s = $parm['block_style'];     
+$s = varset($parms['block_style']);     
                         
+$ns = e107::getRender();
+$prevStyle = $ns->getStyle();
+$styleChanged = false;
+
 if(is_string($s) && strlen($s) > 0) {
-   e107::getRender()->setStyle($s);
+   $ns->setStyle($s);
+   $styleChanged = true;
 }        
                                     
-e107::getRender()->tablerender($caption, $text,  $styleid  ) ;
+$ns->tablerender($caption, $text,  $styleid  ) ;
+
+if($styleChanged) {
+   $ns->setStyle($prevStyle);
+}
 
  
 ?>

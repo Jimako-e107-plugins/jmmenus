@@ -23,14 +23,15 @@ if(is_string($parm))
 	{
 		$parms = $parm;
 	}
+	if(!is_array($parms))
+	{
+		$parms = array();
+	}
 	
 	
  
-if(isset($parms['shortcode_menuCaption'][e_LANGUAGE]))
-{
-	$caption = $parms['shortcode_menuCaption'][e_LANGUAGE];
-}
-else $caption = $parms['shortcode_menuCaption']; 
+$caption = varset($parms['shortcode_menuCaption']);
+$caption = isset($caption[e_LANGUAGE]) ? $caption[e_LANGUAGE] : '';
 
 // supported parms count, template
 /*
@@ -56,7 +57,7 @@ else {
  
 $text =  e107::getParser()->parseTemplate($code);
 
-$style =  e107::getParser()->parseTemplate($parm['shortcode_menuTableStyle']);     
+$style =  e107::getParser()->parseTemplate(varset($parms['shortcode_menuTableStyle']));     
 e107::getRender()->tablerender($caption, $text, $style );
 
  

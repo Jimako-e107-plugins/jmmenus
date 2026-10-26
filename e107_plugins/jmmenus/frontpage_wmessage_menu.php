@@ -23,16 +23,18 @@ if(is_string($parm))
 	{
 		$parms = $parm;
 	}
+	if(!is_array($parms))
+	{
+		$parms = array();
+	}
 	
 	
  
-if(isset($parms['shortcode_menuCaption'][e_LANGUAGE]))
-{
-	$caption = $parms['shortcode_menuCaption'][e_LANGUAGE];
-}
-else $caption = $parms['shortcode_menuCaption']; 
+$caption = varset($parms['shortcode_menuCaption']);
+$caption = isset($caption[e_LANGUAGE]) ? $caption[e_LANGUAGE] : '';
 
 // supported parms count, template
+/*
 $supportedkeys = array(  'template' );
 $parameters = '';     
 foreach ($parms as $key=>$value) {
@@ -41,23 +43,16 @@ foreach ($parms as $key=>$value) {
 	   $parameters .=  "&{$key}={$value}";
 	}
 }
-
-$parameters  =  substr($parameters,1);
 if($parameters) {
-  $code = "{HERO:  {$parameters}}";
+  $code = "{WMESSAGE:  {$parameters}}";
 }
 else {
-  $code = "{HERO}";
+  $code = "{WMESSAGE=force}";
 }
- 
+*/ 
+$code = "{WMESSAGE=force}";
 $text =  e107::getParser()->parseTemplate($code);
-$style =  e107::getParser()->parseTemplate($parm['shortcode_menuTableStyle']);     
- 
-$heroVisibility = e107::pref('hero', 'visibility', e_UC_NOBODY);
-if(true) {
-	e107::library('load', 'animate.css');
-	e107::css('hero', 'css/hero.css');
-}
+$style =  e107::getParser()->parseTemplate(varset($parms['shortcode_menuTableStyle']));    
  
 e107::getRender()->tablerender($caption, $text, $style );
 
